@@ -1,5 +1,5 @@
 ##PROJECT: 
-##Analyze public views of companies based on press release information.
+##Analyze public views of companies based on news information.
 ##Include information such as company size, location, industry, sector, etc.
 
 ##Companies:
@@ -19,8 +19,8 @@ url = unlist(lapply(companies, function(x) paste("http://finance.yahoo.com/q/pr?
 #get company details, specific to Yahoo! finance formatting
 all.tables = lapply(url, function(x) readHTMLTable(x, header=TRUE))
 #this webpage has a lot of empty table areas for formatting
-actual.interested.values = lapply(
+table.info = lapply(
 								lapply(all.tables, '[[', 5), 	#5th table
 										'[', 2)				#2nd column values
-#this is wrong...need a do.call cbind
-table.info = actual.interested.table[6:8,] #sector, industry, employees
+#get info of interest: sector, industry, employees - respectively
+actual.interested.values = data.frame(lapply(table.info, function(x) x[6:8,]))
