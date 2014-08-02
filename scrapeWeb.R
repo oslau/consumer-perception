@@ -95,8 +95,25 @@ x = unlist(htmlToText("http://finance.yahoo.com/q/h?s=TSLA"))
 #edited: htmlToText function to spit out each HTML element as its own list item
 headlines = x[263:328]
 #but not all companies have the same number of headlines?
-today = format(Sys.Date(), "%A, %B %d, %Y")
-#vectorize it:
+today = format(Sys.Date(), "%A, %B%d, %Y")
+begin.select.row = grep(today, x)
+end.select.row = grep("Older Headlines", x)
+headlines = headlines = x[(begin.select.row + 1):(end.select.row - 1)]
+
+#lets make a function of it:
+get.headlines = function(company, mydate){
+	#for debugging
+	print(company)
+	url = paste("http://finance.yahoo.com/q/h?s=", company, sep = "")
+	page.text = unlist(htmlToText(url))
+	begin.select.row = grep(mydate, page.text)
+	end.select.row = grep("Older Headlines", page.text)
+	headlines = x[(begin.select.row + 1):(end.select.row - 1)]
+	headline.data = matrix(headlines, nrow= 3, ncol = length(headlines)/3)
+	headline.data = data.frame(t(headline.data))
+	colnames(headline.data) <- c("Headline", "Source", "DateTime")
+	return(headline.data)
+}
 
 
 
