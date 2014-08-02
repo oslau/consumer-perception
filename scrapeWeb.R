@@ -101,18 +101,25 @@ end.select.row = grep("Older Headlines", x)
 headlines = headlines = x[(begin.select.row + 1):(end.select.row - 1)]
 
 #lets make a function of it:
-get.headlines = function(company, mydate){
+num.days = 7 #one week of data is of interest
+today = format(Sys.Date(), "%A, %B %d, %Y")
+get.headlines = function(company, mydates){
 	#for debugging
 	print(company)
 	url = paste("http://finance.yahoo.com/q/h?s=", company, sep = "")
 	page.text = unlist(htmlToText(url))
+	
+	grep
+	
 	begin.select.row = grep(mydate, page.text)
-	end.select.row = grep("Older Headlines", page.text)
-	headlines = x[(begin.select.row + 1):(end.select.row - 1)]
-	headline.data = matrix(headlines, nrow= 3, ncol = length(headlines)/3)
-	headline.data = data.frame(t(headline.data))
-	colnames(headline.data) <- c("Headline", "Source", "DateTime")
-	return(headline.data)
+	if(length(begin.select.row) == 0)
+		return(paste("No headlines today"))
+		end.select.row = grep("Older Headlines", page.text)
+		headlines = page.text[(begin.select.row + 1):(end.select.row - 1)]
+		headline.data = matrix(headlines, nrow= 3, ncol = length(headlines)/3)
+		headline.data = data.frame(t(headline.data))
+		colnames(headline.data) <- c("Headline", "Source", "DateTime")
+		return(headline.data)
 }
 
 
