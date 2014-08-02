@@ -60,10 +60,12 @@ htmlToText <- function(input, ...) {
   
   # STEP 2: Extract text from HTML
   text.list <- lapply(html.list, convert_html_to_text)
+
   
   # STEP 3: Return text
   text.vector <- sapply(text.list, collapse_text)
-  return(text.vector)
+  #return(text.vector) #this returns one large block
+  return(text.vector) #this returns 
 }
 
 
@@ -72,9 +74,9 @@ companies = c('Facebook', 'Twitter', 'Pandora', 'Apple', 'Google', 'Zynga', 'Tes
 #list of URLs for each company name
 url = unlist(lapply(companies, function(x) paste("http://finance.yahoo.com/q/pr?s=", x, sep="")))
 #get company details, specific to Yahoo! finance formatting
-all.tables = lapply(url, function(x) readHTMLTable(x, header=TRUE))
+all.tables = sapply(url, function(x) readHTMLTable(x, header=TRUE))
 #this webpage has a lot of empty table areas for formatting
-table.info = lapply(
+table.info = sapply(
 								lapply(all.tables, '[[', 5), 	#5th table
 										'[', 2)				#2nd column values
 #get info of interest: sector, industry, employees - respectively
@@ -88,6 +90,14 @@ grep('August 1', x)
 x[183]
 ###Hmm, this line is an entire block of all headlines for the day.
 #use HTML to text function (above)
-x = htmlToText("http://finance.yahoo.com/q/h?s=TSLA")
+x = unlist(htmlToText("http://finance.yahoo.com/q/h?s=TSLA"))
+#now: still one large chunk, but text only.
+#edited: htmlToText function to spit out each HTML element as its own list item
+headlines = x[263:328]
+#but not all companies have the same number of headlines?
+today = format(Sys.Date(), "%A, %B %d, %Y")
+#vectorize it:
+
+
 
 
