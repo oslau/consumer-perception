@@ -12,6 +12,25 @@
 library(XML)
 library(twitteR)
 
+##MAKE SURE THESE ARE https://, not http://
+reqURL <- "https://api.twitter.com/oauth/request_token"
+accessURL <- "https://api.twitter.com/oauth/access_token"
+authURL <- "https://api.twitter.com/oauth/authorize"
+#private
+apikey
+apisecret
+
+twitCred <- OAuthFactory$new(
+  consumerKey = apikey, 
+  consumerSecret = apisecret,
+  requestURL = reqURL,
+  accessURL = accessURL, 
+  authURL = authURL
+  )
+  twitCred$handshake(cainfo="cacert.pem")
+  registerTwitterOAuth(twitCred)
+  
+
 ##htmlToText function adapted from github.com/tonybreyal
 htmlToText <- function(input, ...) {
   ###---PACKAGES ---###
@@ -132,8 +151,19 @@ company.headlines = apply(companies, get.headlines)
 #Manually entering "scoring" of headlines
 #Ideally, use a linguistic database for "positive" and "negative" words
 #and machine learning techniques for contextual reference
+#try: Calais
 fb.rating = as.factor(c('good', 'bad', 'bad', 'neutral', 'neutral', 'neutral', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'good', 'neutral', 'bad', 'good', 'bad', 'good', 'good'))
 twtr.rating = as.factor(c())
+##not finished here...
+
+##Who is talking about these companies?
+
+
+at.fb = searchTwitter("@facebook", n=100)
+hashtag.fb = searchTwitter("#facebook", n=100)
+talking.about.fb = unlist(c(at.fb, hashtag.fb))
+twiter.fb.users = 
+
 
 
 
