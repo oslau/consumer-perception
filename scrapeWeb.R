@@ -65,7 +65,7 @@ htmlToText <- function(input, ...) {
   # STEP 3: Return text
   text.vector <- sapply(text.list, collapse_text)
   #return(text.vector) #this returns one large block
-  return(text.vector) #this returns 
+  return(text.list) #this returns a list
 }
 
 
@@ -74,9 +74,9 @@ companies = c('Facebook', 'Twitter', 'Pandora', 'Apple', 'Google', 'Zynga', 'Tes
 #list of URLs for each company name
 url = unlist(lapply(companies, function(x) paste("http://finance.yahoo.com/q/pr?s=", x, sep="")))
 #get company details, specific to Yahoo! finance formatting
-all.tables = sapply(url, function(x) readHTMLTable(x, header=TRUE))
+all.tables = lapply(url, function(x) readHTMLTable(x, header=TRUE))
 #this webpage has a lot of empty table areas for formatting
-table.info = sapply(
+table.info = lapply(
 								lapply(all.tables, '[[', 5), 	#5th table
 										'[', 2)				#2nd column values
 #get info of interest: sector, industry, employees - respectively
@@ -101,27 +101,39 @@ end.select.row = grep("Older Headlines", x)
 headlines = headlines = x[(begin.select.row + 1):(end.select.row - 1)]
 
 #lets make a function of it:
-num.days = 7 #one week of data is of interest
-today = format(Sys.Date(), "%A, %B %d, %Y")
-get.headlines = function(company, mydates){
+get.headlines = function(company){
 	#for debugging
 	print(company)
 	url = paste("http://finance.yahoo.com/q/h?s=", company, sep = "")
 	page.text = unlist(htmlToText(url))
 	
-	grep
+	headline.dates.row = grep("(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), [A-Za-z]* [0-9]{1,2}, [0-9]{4}", page.text)
+	end.select.row = grep("Older Headlines", page.text)
 	
-	begin.select.row = grep(mydate, page.text)
-	if(length(begin.select.row) == 0)
-		return(paste("No headlines today"))
-		end.select.row = grep("Older Headlines", page.text)
-		headlines = page.text[(begin.select.row + 1):(end.select.row - 1)]
-		headline.data = matrix(headlines, nrow= 3, ncol = length(headlines)/3)
-		headline.data = data.frame(t(headline.data))
-		colnames(headline.data) <- c("Headline", "Source", "DateTime")
-		return(headline.data)
+	headlines = list()
+	##there's a better way to do this.
+	n.dates = length(headline.dates.row)
+	if(n.dates > 1){
+		for(i in 1:(n.dates - 1)){
+			temp = page.text[(headline.dates.row[i]+1):(headline.dates.row[i+1]-1)]
+			headlines = unlist(c(headlines, temp))
+		}
+	}
+	last_date = page.text[(headline.dates.row[n.dates] + 1):(end.select.row - 1)]
+	headlines = unlist(c(headlines, last_date))
+	headline.data = matrix(headlines, nrow= 3, ncol = length(headlines)/3)
+	headline.data = data.frame(t(headline.data))
+	colnames(headline.data) <- c("Headline", "Source", "Date")
+	return(headline.data)
 }
 
+company.headlines = apply(companies, get.headlines)
+
+#Manually entering "scoring" of headlines
+#Ideally, use a linguistic database for "positive" and "negative" words
+#and machine learning techniques for contextual reference
+fb.rating = as.factor(c('good', 'bad', 'bad', 'neutral', 'neutral', 'neutral', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'good', 'neutral', 'bad', 'good', 'bad', 'good', 'good'))
+twtr.rating = as.factor(c())
 
 
 
