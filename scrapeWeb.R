@@ -183,12 +183,19 @@ n.user = length(lookup.user)
 	
 #merge tweet info with user info
 full.data.fb = merge(about.fb, users.info, by="screenName")
-#removing tweet text, and user description
+#dropping singular information
+#eventually will want to keep tweet text for sentiment analysis here
 #later need to do text analysis for this.
-full.data.fb = 
+full.data.fb = full.data.fb[,(colnames(full.data.fb) %in% c("favorited", "favoriteCount", "truncated", "statusSource", "isRetweet", "retweeted", "statusCount", "followersCount", "favoritesCount", "friendsCount", "verified"))]
+full.data.fb$statusSource = strapply(full.data.fb$statusSource, ">(.*)<", simplify = TRUE)
+full.data.fb$localSource = grepl("Twitter (.*)",full.data.fb$statusSource)
+full.data.fb = full.data.fb[, !(colnames(full.data.fb) == "statusSource")]
 
 user.train = sample(users.info$screenName, 200) ##btw, some users tweeted multiple times
 												##so number of resulting tweets is uneven
 												##let's choose slightly less than half of users
 train = full.data.fb[(about.fb$screenName %in% user.train), ]
-test = full.data.fb[!(about.fb$screenName %in% user.train), ]
+test = full.data.fb[!(about.fb$screenName %in% user.train), !(colnames(full.data.fb) == "isRetweet")]
+test.actual = test[,(colnames(full.data.fb) == "isRetweet")]
+myrpart = rpart(isRetweet ~ ., method = "class", data = train)prediction = predict(myrpart, train)
+plot(myrpart)text(myrpart)title(main = "Classification Tree Based on Training Data")
