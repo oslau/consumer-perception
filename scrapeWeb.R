@@ -11,6 +11,7 @@
 #load necessary libraries
 library(XML)
 library(twitteR)
+library(rpart)
 
 ##MAKE SURE THESE ARE https://, not http://
 reqURL <- "https://api.twitter.com/oauth/request_token"
@@ -153,17 +154,41 @@ company.headlines = apply(companies, get.headlines)
 #and machine learning techniques for contextual reference
 #try: Calais
 fb.rating = as.factor(c('good', 'bad', 'bad', 'neutral', 'neutral', 'neutral', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'good', 'neutral', 'bad', 'good', 'bad', 'good', 'good'))
-twtr.rating = as.factor(c())
+#twtr.rating = as.factor(c())
 ##not finished here...
 
 ##Who is talking about these companies?
-
-
-at.fb = searchTwitter("@facebook", n=100)
-hashtag.fb = searchTwitter("#facebook", n=100)
+at.fb = searchTwitter("@facebook", n=250)
+hashtag.fb = searchTwitter("#facebook", n=250)
 talking.about.fb = unlist(c(at.fb, hashtag.fb))
-twiter.fb.users = 
+about.fb = data.frame()
+	##there's a better way to do this.
+n.tweets = length(talking.about.fb)
+	if(n.tweets > 1){
+		for(i in 1:(n.tweets)){
+			temp = as.data.frame(talking.about.fb[[i]])
+			about.fb = rbind(about.fb, temp)
+		}
+	}
+lookup.user = lookupUsers(about.fb$screenName)
+users.info = data.frame()
+	##there's a better way to do this.
+n.user = length(lookup.user)
+	if(n.user > 1){
+		for(i in 1:(n.user)){
+			temp = as.data.frame(lookup.user[[i]])
+			users.info = rbind(users.info, temp)
+		}
+	}
+	
+#merge tweet info with user info
+full.data.fb = merge(about.fb, users.info, by="screenName")
+#removing tweet text, and user description
+#later need to do text analysis for this.
+full.data.fb = 
 
-
-
-
+user.train = sample(users.info$screenName, 200) ##btw, some users tweeted multiple times
+												##so number of resulting tweets is uneven
+												##let's choose slightly less than half of users
+train = full.data.fb[(about.fb$screenName %in% user.train), ]
+test = full.data.fb[!(about.fb$screenName %in% user.train), ]
