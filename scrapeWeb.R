@@ -118,7 +118,7 @@ headlines = x[263:328]
 today = format(Sys.Date(), "%A, %B%d, %Y")
 begin.select.row = grep(today, x)
 end.select.row = grep("Older Headlines", x)
-headlines = headlines = x[(begin.select.row + 1):(end.select.row - 1)]
+headlines = x[(begin.select.row + 1):(end.select.row - 1)]
 
 #lets make a function of it:
 get.headlines = function(company){
@@ -147,19 +147,19 @@ get.headlines = function(company){
 	return(headline.data)
 }
 
-company.headlines = apply(companies, get.headlines)
+company.headlines = lapply(companies, get.headlines)
 
-#Manually entering "scoring" of headlines
+#Manually entering key words of headlines
 #Ideally, use a linguistic database for "positive" and "negative" words
 #and machine learning techniques for contextual reference
 #try: Calais
-fb.rating = as.factor(c('good', 'bad', 'bad', 'neutral', 'neutral', 'neutral', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'bad', 'good', 'neutral', 'bad', 'good', 'bad', 'good', 'good'))
-#twtr.rating = as.factor(c())
+key.words = c("Krill Oil", "Outage", "Experiment", "Service", "Crash", "Recover", "login", 
+		"log in", "disrupt", "stock", "sue", "privacy", "data")
 ##not finished here...
 
 ##Who is talking about these companies?
-at.fb = searchTwitter("@facebook", n=250)
-hashtag.fb = searchTwitter("#facebook", n=250)
+at.fb = searchTwitter("@facebook", n=500)
+hashtag.fb = searchTwitter("#facebook", n=500)
 talking.about.fb = unlist(c(at.fb, hashtag.fb))
 about.fb = data.frame()
 	##there's a better way to do this.
@@ -183,19 +183,33 @@ n.user = length(lookup.user)
 	
 #merge tweet info with user info
 full.data.fb = merge(about.fb, users.info, by="screenName")
+full.data.fb$talking.headlines = grepl(
+	"Krill Oil|Outage|Experiment|Service|Crash|Recover|login|log in|disrupt|stock|sue|privacy|data", full.data.fb$text, ignore.case = TRUE
+	)
 #dropping singular information
 #eventually will want to keep tweet text for sentiment analysis here
 #later need to do text analysis for this.
-full.data.fb = full.data.fb[,(colnames(full.data.fb) %in% c("favorited", "favoriteCount", "truncated", "statusSource", "isRetweet", "retweeted", "statusCount", "followersCount", "favoritesCount", "friendsCount", "verified"))]
 full.data.fb$statusSource = strapply(full.data.fb$statusSource, ">(.*)<", simplify = TRUE)
 full.data.fb$localSource = grepl("Twitter (.*)",full.data.fb$statusSource)
-full.data.fb = full.data.fb[, !(colnames(full.data.fb) == "statusSource")]
+full.data.fb = full.data.fb[,(colnames(full.data.fb) %in% c("talking.headlines","favorited", "favoriteCount", "truncated", "localSource", "isRetweet", "retweeted", "statusCount", "followersCount", "favoritesCount", "friendsCount", "verified"))]
 
-user.train = sample(users.info$screenName, 200) ##btw, some users tweeted multiple times
+user.train = sample(users.info$screenName, 400) ##btw, some users tweeted multiple times
 												##so number of resulting tweets is uneven
 												##let's choose slightly less than half of users
 train = full.data.fb[(about.fb$screenName %in% user.train), ]
 test = full.data.fb[!(about.fb$screenName %in% user.train), !(colnames(full.data.fb) == "isRetweet")]
 test.actual = test[,(colnames(full.data.fb) == "isRetweet")]
-myrpart = rpart(isRetweet ~ ., method = "class", data = train)prediction = predict(myrpart, train)
+myrpart = rpart(isRetweet ~ ., method = "class", data = train)
+#summary(myrpart)
 plot(myrpart)text(myrpart)title(main = "Classification Tree Based on Training Data")
+summary(residuals(myrpart))
+plot(predict(myrpart),residuals(myrpart))
+predictions = predict(myrpart, test, type = "class")
+table(test.actual, predictions)
+
+#playing with pruning
+pfit<- prune(myrpart, cp=myrpart$cptable[which.min(myrpart$cptable[,"xerror"]),"CP"])
+plot(pfit, uniform=TRUE, main="Pruned Classification Tree")
+text(pfit, use.n=TRUE, all=TRUE, cex=.8)
+prune.predictions = predict(myrpart, test, type = "class")
+table(test.actual, prune.predictions)
