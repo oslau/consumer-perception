@@ -1,23 +1,25 @@
 ##PROJECT: 
 ##Analyze public views of companies based on news information.
 ##Include information such as company size, location, industry, sector, etc.
-
 ##Companies:
 ##Facebook, Twitter, Pandora, Apple, Google, Zynga, Tesla, Yahoo
+##Scrape website for company size, industry, sector, etc. Yahoo! Finance has this info
 
-#Scrape website for company size, industry, sector, etc. Yahoo! Finance has this info
-#install.packages('scrapeR')
-#library(scrapeR)
+#set working directory
+setwd('./Documents/Project/Consumer Perception/')
+
 #load necessary libraries
 library(XML)
 library(rpart)
 
 source("htmlToText.R")
 source("twitterOAuth.R")
+source("getHeadlines.R")
 
 
 #list of interesting companies
 companies = c('Facebook', 'Twitter', 'Pandora', 'Apple', 'Google', 'Zynga', 'Tesla', 'Yahoo')
+
 #list of URLs for each company name
 url = unlist(lapply(companies, function(x) paste("http://finance.yahoo.com/q/pr?s=", x, sep="")))
 #get company details, specific to Yahoo! finance formatting
@@ -31,50 +33,7 @@ actual.interested.values = data.frame(lapply(table.info, function(x) x[6:8,]))
 colnames(actual.interested.values) <- companies
 
 ##Scrape websites for recent headline information
-#Let's explore where the headlines are...
-x = readLines("http://finance.yahoo.com/q/h?s=TSLA")
-grep('August 1', x)
-x[183]
-###Hmm, this line is an entire block of all headlines for the day.
-#use HTML to text function (above)
-x = unlist(htmlToText("http://finance.yahoo.com/q/h?s=TSLA"))
-#now: still one large chunk, but text only.
-#edited: htmlToText function to spit out each HTML element as its own list item
-headlines = x[263:328]
-#but not all companies have the same number of headlines?
-today = format(Sys.Date(), "%A, %B%d, %Y")
-begin.select.row = grep(today, x)
-end.select.row = grep("Older Headlines", x)
-headlines = x[(begin.select.row + 1):(end.select.row - 1)]
-
-#lets make a function of it:
-get.headlines = function(company){
-	#for debugging
-	print(company)
-	url = paste("http://finance.yahoo.com/q/h?s=", company, sep = "")
-	page.text = unlist(htmlToText(url))
-	
-	headline.dates.row = grep("(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday), [A-Za-z]* [0-9]{1,2}, [0-9]{4}", page.text)
-	end.select.row = grep("Older Headlines", page.text)
-	
-	headlines = list()
-	##there's a better way to do this.
-	n.dates = length(headline.dates.row)
-	if(n.dates > 1){
-		for(i in 1:(n.dates - 1)){
-			temp = page.text[(headline.dates.row[i]+1):(headline.dates.row[i+1]-1)]
-			headlines = unlist(c(headlines, temp))
-		}
-	}
-	last_date = page.text[(headline.dates.row[n.dates] + 1):(end.select.row - 1)]
-	headlines = unlist(c(headlines, last_date))
-	headline.data = matrix(headlines, nrow= 3, ncol = length(headlines)/3)
-	headline.data = data.frame(t(headline.data))
-	colnames(headline.data) <- c("Headline", "Source", "Date")
-	return(headline.data)
-}
-
-company.headlines = lapply(companies, get.headlines)
+company.headlines = lapply(companies, getHeadlines)
 
 #Manually entering key words of headlines
 #Ideally, use a linguistic database for "positive" and "negative" words
